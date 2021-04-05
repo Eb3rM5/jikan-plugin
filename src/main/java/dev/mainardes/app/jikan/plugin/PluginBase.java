@@ -9,55 +9,64 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public interface PluginBase<T> {
+public abstract class PluginBase<T> {
 
-    ObjectMapper PROPERTY_MAPPER = new ObjectMapper();
+    private static final ObjectMapper PROPERTY_MAPPER = new ObjectMapper();
 
-    Path PLUGIN_DIRECTORY = Paths.get(System.getenv("APPDATA")).resolve("jikan").resolve("plugins");
+    public static final Path PLUGIN_DIRECTORY = Paths.get(System.getenv("APPDATA")).resolve("jikan").resolve("plugins");
 
-    String getName();
+    private T properties;
 
-    String getVersion();
+    public abstract String getName();
 
-    Class<T> getPropertiesObjectType();
+    public abstract String getVersion();
 
-    T createEmptyProperties();
+    public abstract Class<T> getPropertiesObjectType();
 
-    boolean validate(T properties);
+    public abstract T createEmptyProperties();
 
-    boolean install();
+    public abstract boolean validate(T properties);
 
-    boolean uninstall();
+    public abstract boolean install();
 
-    default T getProperties() throws IOException {
-        var mapper = getPropertyMapper();
+    public abstract boolean uninstall();
 
-        if (mapper != null){
-            Path pluginDirectory = PLUGIN_DIRECTORY.resolve(getName());
-            Path propertiesFile = pluginDirectory.resolve("properties.json");
+    public T getProperties() throws IOException {
+        if (properties == null) {
+            var mapper = getPropertyMapper();
 
-            if (Files.exists(propertiesFile)){
-                try (var reader = Files.newBufferedReader(propertiesFile, StandardCharsets.UTF_8)){
-                    return mapper.readValue(reader, getPropertiesObjectType());
-                }
-            } else {
-                Files.createDirectories(pluginDirectory);
-                T emptyPropertyObject = createEmptyProperties();
+            if (mapper != null){
+                Path pluginDirectory = PLUGIN_DIRECTORY.resolve(getName());
+                Path propertiesFile = pluginDirectory.resolve("properties.json");
 
-                if (emptyPropertyObject != null){
-                    try (var writer = Files.newBufferedWriter(propertiesFile, StandardCharsets.UTF_8)){
-                        mapper.writeValue(writer, emptyPropertyObject);
-                        return emptyPropertyObject;
+                if (Files.exists(propertiesFile)){
+                    try (var reader = Files.newBufferedReader(propertiesFile, StandardCharsets.UTF_8)){
+                        return mapper.readValue(reader, getPropertiesObjectType());
                     }
-                }
+                } else {
+                    Files.createDirectories(pluginDirectory);
+                    T emptyPropertyObject = createEmptyProperties();
 
+                    if (emptyPropertyObject != null){
+                        try (var writer = Files.newBufferedWriter(propertiesFile, StandardCharsets.UTF_8)){
+                            mapper.writeValue(writer, emptyPropertyObject);
+                            return emptyPropertyObject;
+                        }
+                    }
+
+                }
             }
         }
-
-        return null;
+        return properties;
     }
 
-    default ObjectMapper getPropertyMapper(){
+    public void deletePropertyFile() throws IOException {
+        var pluginDirectory = PLUGIN_DIRECTORY.resolve(getName());
+        var propertiesFile = pluginDirectory.resolve("properties.json");
+        Files.deleteIfExists(propertiesFile);
+    }
+
+    public ObjectMapper getPropertyMapper(){
         return PROPERTY_MAPPER;
     }
 

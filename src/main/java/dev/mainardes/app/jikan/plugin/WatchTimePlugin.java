@@ -6,12 +6,12 @@ import dev.mainardes.app.jikan.entity.JikanUser;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public interface WatchTimePlugin<T> extends PluginBase<T> {
+public abstract class WatchTimePlugin<T> extends PluginBase<T> {
 
-    JikanUser getUser();
+    public abstract JikanUser getUser();
 
-    TimeCard getTimeCard(JikanUser user, LocalDateTime current);
+    public abstract TimeCard getTimeCard(JikanUser user, LocalDateTime current);
 
-    List<TimeCard> getTimeCards(JikanUser user);
+    public abstract List<TimeCard> getTimeCards(JikanUser user);
 
 }
