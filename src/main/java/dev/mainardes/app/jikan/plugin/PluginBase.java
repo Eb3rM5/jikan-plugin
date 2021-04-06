@@ -41,23 +41,33 @@ public abstract class PluginBase<T> {
 
                 if (Files.exists(propertiesFile)){
                     try (var reader = Files.newBufferedReader(propertiesFile, StandardCharsets.UTF_8)){
-                        return mapper.readValue(reader, getPropertiesObjectType());
+                        properties = mapper.readValue(reader, getPropertiesObjectType());
                     }
                 } else {
-                    Files.createDirectories(pluginDirectory);
-                    T emptyPropertyObject = createEmptyProperties();
-
-                    if (emptyPropertyObject != null){
-                        try (var writer = Files.newBufferedWriter(propertiesFile, StandardCharsets.UTF_8)){
-                            mapper.writeValue(writer, emptyPropertyObject);
-                            return emptyPropertyObject;
-                        }
-                    }
-
+                    properties = saveProperties(createEmptyProperties(), mapper, pluginDirectory, propertiesFile);
                 }
             }
         }
         return properties;
+    }
+
+    public T saveProperties() throws IOException {
+        var pluginDirectory = PLUGIN_DIRECTORY.resolve(getName());
+        return saveProperties(getProperties(), getPropertyMapper(), pluginDirectory, pluginDirectory.resolve("properties.json"));
+    }
+
+    private T saveProperties(T properties, ObjectMapper mapper, Path pluginDirectory, Path propertiesFile) throws IOException {
+        Files.createDirectories(pluginDirectory);
+        Files.deleteIfExists(propertiesFile);
+
+        if (properties != null){
+            try (var writer = Files.newBufferedWriter(propertiesFile, StandardCharsets.UTF_8)){
+                mapper.writeValue(writer, properties);
+                return properties;
+            }
+        }
+
+        return null;
     }
 
     public void deletePropertyFile() throws IOException {
