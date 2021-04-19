@@ -1,83 +1,74 @@
 package dev.mainardes.app.jikan.plugin;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.mainardes.app.jikan.util.JikanUtil;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
 
-public abstract class PluginBase<T> {
-
-    private static final ObjectMapper PROPERTY_MAPPER = new ObjectMapper();
+public abstract class PluginBase<T extends PluginProperties<T, ? extends PluginBase<T>>> {
 
     public static final Path PLUGIN_DIRECTORY = Paths.get(System.getenv("APPDATA")).resolve("jikan").resolve("plugins");
 
+    private static final Map<String, PluginBase<?>> PLUGINS = new LinkedHashMap<>();
+
     private T properties;
 
-    public abstract String getName();
-
-    public abstract String getVersion();
-
-    public abstract Class<T> getPropertiesObjectType();
-
-    public abstract T createEmptyProperties();
-
-    public abstract boolean validate(T properties);
-
-    public abstract boolean install();
-
-    public abstract boolean uninstall();
-
-    public T getProperties() throws IOException {
-        if (properties == null) {
-            var mapper = getPropertyMapper();
-
-            if (mapper != null){
-                Path pluginDirectory = PLUGIN_DIRECTORY.resolve(getName());
-                Path propertiesFile = pluginDirectory.resolve("properties.json");
-
-                if (Files.exists(propertiesFile)){
-                    try (var reader = Files.newBufferedReader(propertiesFile, StandardCharsets.UTF_8)){
-                        properties = mapper.readValue(reader, getPropertiesObjectType());
-                    }
-                } else {
-                    properties = saveProperties(createEmptyProperties(), mapper, pluginDirectory, propertiesFile);
-                }
+    public T getProperties() {
+        if (properties == null){
+            try {
+                properties = createEmptyProperties().refresh();
+            } catch (IOException e){
+                e.printStackTrace();
             }
         }
         return properties;
     }
 
-    public T saveProperties() throws IOException {
-        var pluginDirectory = PLUGIN_DIRECTORY.resolve(getName());
-        return saveProperties(getProperties(), getPropertyMapper(), pluginDirectory, pluginDirectory.resolve("properties.json"));
+    public void register(){
+        register(this);
     }
 
-    private T saveProperties(T properties, ObjectMapper mapper, Path pluginDirectory, Path propertiesFile) throws IOException {
-        Files.createDirectories(pluginDirectory);
-        Files.deleteIfExists(propertiesFile);
-
-        if (properties != null){
-            try (var writer = Files.newBufferedWriter(propertiesFile, StandardCharsets.UTF_8)){
-                mapper.writeValue(writer, properties);
-                return properties;
-            }
-        }
-
-        return null;
+    public void unregister() throws IOException {
+        unregister(this);
     }
 
-    public void deletePropertyFile() throws IOException {
-        var pluginDirectory = PLUGIN_DIRECTORY.resolve(getName());
-        var propertiesFile = pluginDirectory.resolve("properties.json");
-        Files.deleteIfExists(propertiesFile);
+    public Path getDirectory(){
+        return PLUGIN_DIRECTORY.resolve(getName());
     }
 
-    public ObjectMapper getPropertyMapper(){
-        return PROPERTY_MAPPER;
+    public abstract String getName();
+
+    public abstract String getVersion();
+
+    public abstract T createEmptyProperties();
+
+    public abstract boolean install();
+
+    public abstract boolean uninstall();
+
+    public static void register(PluginBase<?> plugin){
+        var propertyClass = Objects.requireNonNull(getPropertyClassName(plugin), "Couldn't determine property class type.");
+        PLUGINS.putIfAbsent(propertyClass, plugin);
+    }
+
+    public static void unregister(PluginBase<?> plugin) throws IOException {
+        var propertyClass = Objects.requireNonNull(getPropertyClassName(plugin), "Couldn't determine property class type.");
+        JikanUtil.delete(plugin.getDirectory());
+
+        PLUGINS.remove(propertyClass);
+    }
+
+    public static <T extends PluginProperties<?, ?>> PluginBase<?> getPlugin(Class<T> propertyClass){
+        return PLUGINS.get(propertyClass.getName());
+    }
+
+    public static String getPropertyClassName(PluginBase<?> plugin){
+        var type = JikanUtil.getGenericTypeOf(plugin.getClass());
+        return type != null ? type.getTypeName() : null;
     }
 
 }
