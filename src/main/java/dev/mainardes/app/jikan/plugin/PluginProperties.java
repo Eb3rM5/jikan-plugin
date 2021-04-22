@@ -1,9 +1,9 @@
 package dev.mainardes.app.jikan.plugin;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import dev.mainardes.app.jikan.exception.PluginException;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -17,7 +17,7 @@ public interface PluginProperties<T extends PluginProperties<T, P>, P extends Pl
 
     default T save() throws IOException {
         var file = getPropertyFile();
-        var directory = Files.createDirectories(file.getParent());
+        Files.createDirectories(file.getParent());
 
         Files.deleteIfExists(file);
 
@@ -56,7 +56,12 @@ public interface PluginProperties<T extends PluginProperties<T, P>, P extends Pl
 
     @JsonIgnore
     default P getPlugin(){
-        return getPluginClass().cast(PluginBase.getPlugin(getClass()));
+        final var manager = PluginManager.getPluginManager();
+        try {
+            return getPluginClass().cast(manager.getPlugin(getPluginClass()));
+        } catch (PluginException e){
+            return null;
+        }
     }
 
     @JsonIgnore

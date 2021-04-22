@@ -3,6 +3,7 @@ package dev.mainardes.app.jikan.plugin;
 import dev.mainardes.app.jikan.entity.JikanUser;
 import dev.mainardes.app.jikan.entity.TimeCard;
 import dev.mainardes.app.jikan.entity.TimePoint;
+import dev.mainardes.app.jikan.exception.NoPluginManagerRegistered;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -14,6 +15,10 @@ import java.util.Collections;
 import java.util.List;
 
 public abstract class WatchTimePlugin<T extends PluginProperties<T, ? extends WatchTimePlugin<T>>> extends PluginBase<T> {
+
+    public WatchTimePlugin() throws NoPluginManagerRegistered {
+        super();
+    }
 
     public abstract JikanUser getUser();
 
