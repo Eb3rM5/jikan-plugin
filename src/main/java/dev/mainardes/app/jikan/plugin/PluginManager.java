@@ -30,10 +30,6 @@ public abstract class PluginManager {
         return plugins;
     }
 
-    public boolean isRegistered(){
-        return INSTANCE == this;
-    }
-
     public <T extends PluginBase<?>> T getPlugin(Class<T> pluginClass) throws PluginNotFound {
         String typeName = pluginClass.getTypeName();
         PluginBase<?> registeredPlugin = plugins.get(typeName);
@@ -50,10 +46,11 @@ public abstract class PluginManager {
     public void unregister(PluginBase<?> plugin) throws IOException, NotRegisteredAsPluginManager {
         if (INSTANCE != this) throw new NotRegisteredAsPluginManager(this);
 
-        var propertyClass = Objects.requireNonNull(getPropertyClassName(plugin), "Couldn't determine property class type.");
-        JikanPluginUtil.delete(plugin.getDirectory());
+        var pluginClass = plugin.getClass().getTypeName();
+        plugin.uninstall();
 
-        getPlugins().remove(propertyClass);
+        plugin = getPlugins().remove(pluginClass);
+        JikanPluginUtil.delete(plugin.getDirectory());
     }
 
     public void uninstall() throws PluginException, IOException {
@@ -61,34 +58,32 @@ public abstract class PluginManager {
             plugin.unregister();
         }
 
-        Files.deleteIfExists(getPluginDirectory());
-    }
-
-    public static String getPropertyClassName(PluginBase<?> plugin){
-        var type = JikanPluginUtil.getGenericTypeOf(plugin.getClass());
-        return type != null ? type.getTypeName() : null;
-    }
-
-    public static PluginManager getPluginManager(){
-        return INSTANCE;
+        JikanPluginUtil.delete(getPluginDirectory());
     }
 
     public static <T extends PluginManager> T getPluginManager(Class<T> managerClass) throws NotRegisteredAsPluginManager {
-
         if (INSTANCE != null){
             if (managerClass.isInstance(INSTANCE)){
                 return managerClass.cast(INSTANCE);
             }
             throw new NotRegisteredAsPluginManager(managerClass);
-        }
+        } else {
+            final T manager = JikanPluginUtil.newInstanceOf(managerClass);
 
-        final T manager = JikanPluginUtil.newInstanceOf(managerClass);
-
-        if (manager == null) return null;
-        else {
-            INSTANCE = manager;
-            return manager;
+            if (manager == null) return null;
+            else {
+                INSTANCE = manager;
+                return manager;
+            }
         }
+    }
+
+    public boolean isRegistered(){
+        return INSTANCE == this;
+    }
+
+    public static PluginManager getPluginManager(){
+        return INSTANCE;
     }
 
 }
