@@ -75,7 +75,7 @@ public final class JikanPluginUtil {
     public static <T> T newInstanceOf(Class<T> type){
         try {
             var constructor = type.getDeclaredConstructor();
-            if (force && !constructor.canAccess(null)){
+            if (!constructor.canAccess(null)){
                 constructor.setAccessible(true);
             }
 
