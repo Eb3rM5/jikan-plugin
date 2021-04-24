@@ -29,8 +29,8 @@ public abstract class PluginBase<T extends PluginProperties<T, ? extends PluginB
     }
 
     public void reset() throws IOException {
-        T properties = getProperties();
         if (properties != null) properties.delete();
+        properties = null;
     }
 
     public void unregister() throws IOException, NotRegisteredAsPluginManager {

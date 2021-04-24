@@ -10,7 +10,7 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
-public final class JikanUtil {
+public final class JikanPluginUtil {
 
     public static String getLocalTimeString(long nanoOfDay){
         var time = LocalTime.ofNanoOfDay(Math.abs(nanoOfDay));
@@ -30,7 +30,7 @@ public final class JikanUtil {
     public static void delete(Path path) {
         try {
             if (Files.isDirectory(path)){
-                Files.list(path).forEach(JikanUtil::delete);
+                Files.list(path).forEach(JikanPluginUtil::delete);
             }
 
             Files.deleteIfExists(path);
@@ -72,7 +72,21 @@ public final class JikanUtil {
         }
     }
 
+    public static <T> T newInstanceOf(Class<T> type){
+        try {
+            var constructor = type.getDeclaredConstructor();
+            if (force && !constructor.canAccess(null)){
+                constructor.setAccessible(true);
+            }
 
-    private JikanUtil() {}
+            return constructor.newInstance();
+        } catch (ReflectiveOperationException e){
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    private JikanPluginUtil() {}
 
 }

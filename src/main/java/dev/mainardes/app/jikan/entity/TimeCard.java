@@ -1,7 +1,7 @@
 package dev.mainardes.app.jikan.entity;
 
 import dev.mainardes.app.jikan.plugin.WatchTimePlugin;
-import dev.mainardes.app.jikan.util.JikanUtil;
+import dev.mainardes.app.jikan.util.JikanPluginUtil;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -33,16 +33,16 @@ public class TimeCard {
 
         public boolean isEndHit(LocalTime time, JikanUser user, WatchTimePlugin<?> plugin){
             var limit = end.plus(plugin.getTimePointLimit(user));
-            return JikanUtil.isBetween(time, end, limit);
+            return JikanPluginUtil.isBetween(time, end, limit);
         }
 
         public boolean isStartHit(LocalTime time, JikanUser user, WatchTimePlugin<?> plugin){
             var limit = start.plus(plugin.getTimePointLimit(user));
-            return JikanUtil.isBetween(time, start, limit);
+            return JikanPluginUtil.isBetween(time, start, limit);
         }
 
         public boolean isBetween(LocalTime time){
-            return JikanUtil.isBetween(time, start, end);
+            return JikanPluginUtil.isBetween(time, start, end);
         }
 
     }

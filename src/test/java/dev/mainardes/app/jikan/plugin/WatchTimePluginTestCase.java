@@ -1,5 +1,6 @@
 package dev.mainardes.app.jikan.plugin;
 
+import dev.mainardes.app.jikan.exception.PluginManagerAlreadyRegistered;
 import org.junit.Test;
 
 import java.time.Duration;
