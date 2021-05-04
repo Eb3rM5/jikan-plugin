@@ -1,17 +1,18 @@
 package dev.mainardes.app.jikan.plugin;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import dev.mainardes.app.jikan.exception.NotRegisteredAsPluginManager;
-import dev.mainardes.app.jikan.exception.PluginException;
-import dev.mainardes.app.jikan.exception.PluginManagerAlreadyRegistered;
 import dev.mainardes.app.jikan.exception.PluginNotFound;
 import dev.mainardes.app.jikan.util.JikanPluginUtil;
 
 import java.io.IOException;
-import java.nio.file.Files;
+import java.lang.reflect.ParameterizedType;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.stream.Collectors;
 
 public abstract class PluginManager {
 
@@ -19,15 +20,27 @@ public abstract class PluginManager {
 
     private final Map<String, PluginBase<?>> plugins = new HashMap<>();
 
-    protected PluginManager() throws PluginManagerAlreadyRegistered {
-        if (INSTANCE != null) throw new PluginManagerAlreadyRegistered();
-        INSTANCE = this;
-    }
-
     public abstract Path getPluginDirectory();
 
     public Map<String, PluginBase<?>> getPlugins(){
         return plugins;
+    }
+
+    public List<WatchTimePlugin<?>> getWatchTimePlugins(){
+        return getPlugins().values()
+                            .parallelStream()
+                            .filter(WatchTimePlugin.class::isInstance)
+                            .map(e->(WatchTimePlugin<?>)e)
+                            .collect(Collectors.toList());
+    }
+
+    public <T extends PluginBase<?>> T getPlugin(String name, Class<T> pluginType){
+        for (var plugin : getPlugins().values()){
+            if (plugin.getName().equals(name) && pluginType.isInstance(plugin)){
+                return pluginType.cast(plugin);
+            }
+        }
+        return null;
     }
 
     public <T extends PluginBase<?>> T getPlugin(Class<T> pluginClass) throws PluginNotFound {
@@ -53,7 +66,10 @@ public abstract class PluginManager {
         JikanPluginUtil.delete(plugin.getDirectory());
     }
 
-    public void uninstall() throws PluginException, IOException {
+    public void install() {
+    }
+
+    public void uninstall() throws IOException, NotRegisteredAsPluginManager {
         for (var plugin : plugins.values()) {
             plugin.unregister();
         }
@@ -73,6 +89,7 @@ public abstract class PluginManager {
             if (manager == null) return null;
             else {
                 INSTANCE = manager;
+                manager.install();
                 return manager;
             }
         }
