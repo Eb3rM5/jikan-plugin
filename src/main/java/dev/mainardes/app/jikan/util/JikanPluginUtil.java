@@ -5,10 +5,12 @@ import dev.mainardes.app.jikan.entity.TimePoint;
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.UUID;
 
 public final class JikanPluginUtil {
 
@@ -85,6 +87,10 @@ public final class JikanPluginUtil {
         }
 
         return null;
+    }
+
+    public static String generateUUIDFromString(String string){
+        return UUID.nameUUIDFromBytes(string.getBytes(StandardCharsets.UTF_8)).toString();
     }
 
     private JikanPluginUtil() {}

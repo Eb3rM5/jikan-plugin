@@ -2,19 +2,25 @@ package dev.mainardes.app.jikan.plugin;
 
 import dev.mainardes.app.jikan.exception.NoPluginManagerRegistered;
 import dev.mainardes.app.jikan.exception.NotRegisteredAsPluginManager;
+import dev.mainardes.app.jikan.util.JikanPluginUtil;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.UUID;
 
 public abstract class PluginBase<T extends PluginProperties<T, ? extends PluginBase<T>>> {
 
     private final PluginManager manager;
     private T properties;
 
+    private final Path directory;
+
     protected PluginBase() throws NoPluginManagerRegistered {
         if ((this.manager = PluginManager.getPluginManager()) == null){
             throw new NoPluginManagerRegistered(this);
         }
+
+        directory = manager.getPluginDirectory().resolve(JikanPluginUtil.generateUUIDFromString(getName()));
     }
 
     public T getProperties() {
@@ -38,7 +44,7 @@ public abstract class PluginBase<T extends PluginProperties<T, ? extends PluginB
     }
 
     public Path getDirectory(){
-        return manager.getPluginDirectory().resolve(getName());
+        return directory;
     }
 
     public abstract String getName();
