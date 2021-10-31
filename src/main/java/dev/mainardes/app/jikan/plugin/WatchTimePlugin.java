@@ -4,6 +4,7 @@ import dev.mainardes.app.jikan.entity.JikanUser;
 import dev.mainardes.app.jikan.entity.TimeCard;
 import dev.mainardes.app.jikan.entity.TimePoint;
 import dev.mainardes.app.jikan.exception.NoPluginManagerRegistered;
+import dev.mainardes.app.jikan.util.JikanPluginUtil;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -46,6 +47,12 @@ public abstract class WatchTimePlugin<T extends PluginProperties<T, ? extends Wa
         return getAdjustedTimeTableOn(user, LocalDate.now());
     }
 
+    public LocalTime getNextTimePoint(JikanUser user, LocalDate date){
+        var points = getTimePointsOn(user, date);
+        var ranges = getTimeRanges(user);
+        return getAdjustedTimeTableOn(points, ranges, null);
+    }
+
     public List<LocalTime> getAdjustedTimeTableOn(JikanUser user, LocalDate date){
         var points = getTimePointsOn(user, date);
         var ranges = getTimeRanges(user);
@@ -78,6 +85,8 @@ public abstract class WatchTimePlugin<T extends PluginProperties<T, ? extends Wa
                     if (table == null) return pointStart;
                 }
 
+
+
                 extra = getStartExtra(expectedStart, pointStart);
                 startExtra += extra;
 
@@ -89,8 +98,10 @@ public abstract class WatchTimePlugin<T extends PluginProperties<T, ? extends Wa
                 extra = getEndExtra(expectedEnd, pointEnd);
                 endExtra += extra;
 
-                table.add(pointStart);
-                table.add(pointEnd);
+                if (table != null){
+                    table.add(pointStart);
+                    table.add(pointEnd);
+                }
 
             }
 
